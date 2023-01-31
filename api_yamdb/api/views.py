@@ -2,7 +2,8 @@ from rest_framework import viewsets
 from rest_framework.pagination import LimitOffsetPagination
 
 from reviews.models import Category, Genre, Title, User
-from .serializers import CategorySerializer, GenreSerializer, TitleSerializer, UserSerializer
+from .serializers import (CategorySerializer, GenreSerializer,
+                          TitleSerializer, UserSerializer)
 from .permission import IsAdminOnly
 
 
@@ -25,6 +26,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
