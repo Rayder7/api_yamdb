@@ -1,2 +1,2 @@
-# api_yamdb
-api_yamdb
+# Project api_yamdb
+пишем апи
