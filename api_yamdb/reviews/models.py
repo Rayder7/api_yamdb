@@ -5,7 +5,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 from .validators import validate_username
 
-User = get_user_model()
+#User = get_user_model()
+
 
 class Category(models.Model):
     name = models.CharField('Название', max_length=256, default='отсутствует')
@@ -130,9 +131,17 @@ class Review(models.Model):
         verbose_name='Автор',
         related_name='review_author'
     )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='произведение',
+        default=0
+    )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
     score = models.ForeignKey(
-        Rating, validators=[MinValueValidator(1), MaxValueValidator(10)], on_delete=models.CASCADE
+        Rating, validators=[MinValueValidator(1), MaxValueValidator(10)],
+        on_delete=models.CASCADE
     )
 
     def __str__(self):
@@ -151,6 +160,13 @@ class Comment(models.Model):
         verbose_name='Автор',
         related_name='comment_author'
     )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='отзыв',
+        default=0
+    )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     def __str__(self):
@@ -159,4 +175,3 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-
