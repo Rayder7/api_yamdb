@@ -3,7 +3,8 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from reviews.models import Category, Genre, GenreToTitle, Title, User
+from reviews.models import (Category, Comment, Genre,
+                            GenreToTitle, Review, Title, User)
 
 
 class Command(BaseCommand):
@@ -55,6 +56,34 @@ class Command(BaseCommand):
                         id=r[0], title_id=r[1], genre_id=r[2]
                     )
 
+    def comment_transfer(self):
+        with open(os.path.join(
+                settings.BASE_DIR, 'static/data/comments.csv'
+        ), 'r', encoding='utf-8') as csv_f:
+
+            file_reader = csv.reader(csv_f, delimiter=",")
+
+            for r in file_reader:
+                if r[0] != 'id':
+                    Comment.objects.get_or_create(
+                        id=r[0], rewiew_id=r[1], text=r[2],
+                        author=r[3], pub_date=r[4]
+                    )
+
+    def review_transfer(self):
+        with open(os.path.join(
+                settings.BASE_DIR, 'static/data/review.csv'
+        ), 'r', encoding='utf-8') as csv_f:
+
+            file_reader = csv.reader(csv_f, delimiter=",")
+
+            for r in file_reader:
+                if r[0] != 'id':
+                    Review.objects.get_or_create(
+                        id=r[0], title_id=r[1], text=r[2],
+                        author=r[3], score=r[4], pub_date=r[5]
+                    )
+
     def user_transfer(self):
         with open(os.path.join(settings.BASE_DIR, 'static/data/users.csv'),
                   'r', encoding='utf-8') as csv_f:
@@ -73,5 +102,7 @@ class Command(BaseCommand):
         self.genre_transfer()
         self.title_transfer()
         self.title_genre_transfer()
+        self.comment_transfer()
+        self.review_transfer()
         #  self.user_transfer() не работает: django.db.utils.OperationalError:
         #  no such table: reviews_user
