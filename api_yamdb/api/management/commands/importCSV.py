@@ -66,7 +66,7 @@ class Command(BaseCommand):
             for r in file_reader:
                 if r[0] != 'id':
                     Comment.objects.get_or_create(
-                        id=r[0], rewiew_id=r[1], text=r[2],
+                        id=r[0], review_id=r[1], text=r[2],
                         author=r[3], pub_date=r[4]
                     )
 
@@ -102,7 +102,7 @@ class Command(BaseCommand):
         self.genre_transfer()
         self.title_transfer()
         self.title_genre_transfer()
-        self.comment_transfer()
-        self.review_transfer()
+        #  self.comment_transfer() нужен юзер
+        #  self.review_transfer() нужен юзер
         #  self.user_transfer() не работает: django.db.utils.OperationalError:
         #  no such table: reviews_user
