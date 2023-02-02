@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-
 User = get_user_model()
 
 
@@ -10,23 +9,11 @@ class Title(models.Model):
     name = models.CharField(max_length=60)
 
 
-class Rating(models.Model):
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='rating_author'
-    )
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='rating_title'
-    )
-
-    def __str__(self):
-        return f'{self.title}- {self.author}'
-
-    class Meta:
-        unique_together = ('author', 'title')
-
-
 class Review(models.Model):
     text = models.TextField('Отзыв')
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='review'
+    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -35,7 +22,9 @@ class Review(models.Model):
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
     score = models.ForeignKey(
-        Rating, validators=[MinValueValidator(1), MaxValueValidator(10)], on_delete=models.CASCADE
+        'Рейтинг',
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        on_delete=models.CASCADE
     )
 
     def __str__(self):
@@ -44,10 +33,19 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('title', 'author'),
+                name='unique_author_title'
+            )
+        ]
 
 
 class Comment(models.Model):
     text = models.TextField('Комментарий', max_length=5000)
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comment_review'
+    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -62,3 +60,17 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+
+# class Rating(models.Model):
+#     author = models.ForeignKey(
+#         User, on_delete=models.CASCADE, related_name='rating_author'
+#     )
+#     title = models.ForeignKey(
+#         Title, on_delete=models.CASCADE, related_name='rating_title'
+#     )
+#
+#     def __str__(self):
+#         return f'{self.title}- {self.author}'
+#
+#     class Meta:
+#         unique_together = ('author', 'title')
