@@ -6,8 +6,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 User = get_user_model()
 
 
-class Title:
-    pass
+class Title(models.Model):
+    name = models.CharField(max_length=60)
 
 
 class Rating(models.Model):
@@ -35,7 +35,7 @@ class Review(models.Model):
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
     score = models.ForeignKey(
-        Rating, validators=[MinValueValidator(1), MaxValueValidator(10)]
+        Rating, validators=[MinValueValidator(1), MaxValueValidator(10)], on_delete=models.CASCADE
     )
 
     def __str__(self):
