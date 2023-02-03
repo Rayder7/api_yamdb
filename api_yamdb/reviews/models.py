@@ -105,21 +105,6 @@ class User(AbstractUser):
         return self.username
 
 
-class Rating(models.Model):
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='rating_author'
-    )
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='rating_title'
-    )
-
-    def __str__(self):
-        return f'{self.title}- {self.author}'
-
-    class Meta:
-        unique_together = ('author', 'title')
-
-
 class Review(models.Model):
     text = models.TextField('Отзыв')
     author = models.ForeignKey(
@@ -133,13 +118,12 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='произведение',
-        default=0
+        default=1
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-    score = models.ForeignKey(
-        Rating,
+    score = models.PositiveSmallIntegerField(
+        'Рейтинг',
         validators=[MinValueValidator(1), MaxValueValidator(10)],
-        on_delete=models.CASCADE
     )
 
     def __str__(self):
@@ -169,7 +153,6 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='отзыв',
-        default=0
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 

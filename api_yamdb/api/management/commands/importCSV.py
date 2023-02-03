@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 if r[0] != 'id':
                     Review.objects.get_or_create(
                         id=r[0], title_id=r[1], text=r[2],
-                        author_id=r[3], score_id=r[4], pub_date=r[5]
+                        author_id=r[3], score=r[4], pub_date=r[5]
                     )
 
     def handle(self, *args, **options):
@@ -103,5 +103,5 @@ class Command(BaseCommand):
         self.genre_transfer()
         self.title_transfer()
         self.title_genre_transfer()
-        #  self.comment_transfer()
+        self.comment_transfer()
         #  self.review_transfer()
