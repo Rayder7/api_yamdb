@@ -103,5 +103,6 @@ class Command(BaseCommand):
         self.genre_transfer()
         self.title_transfer()
         self.title_genre_transfer()
+        self.review_transfer()
         self.comment_transfer()
-        #  self.review_transfer()
+

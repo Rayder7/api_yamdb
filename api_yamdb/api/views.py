@@ -1,5 +1,7 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
@@ -32,24 +34,32 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    #permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+    # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+
+    def get_title(self):
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Title, id=title_id)
 
     def get_queryset(self):
-        title_id = self.kwargs.get('id')
-        # title = get_object_or_404(Title, id=title_id)
-        return Review.objects.filter(id=title_id)
+        return self.get_title().reviews.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, title=self.get_title())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    #permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+    # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+
+    def get_review(self):
+        review_id = self.kwargs.get('review_id')
+        return get_object_or_404(Review, id=review_id)
 
     def get_queryset(self):
-        review_id = self.kwargs.get('id')
-        return Comment.objects.filter(id=review_id)
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(author=self.request.user, review=self.get_review())
 
 
 class UserViewSet(viewsets.ModelViewSet):
