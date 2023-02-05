@@ -81,6 +81,7 @@ class Token():
 class Signup(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         keys = serializer.data.keys()
         if 'email' not in keys or 'username' not in keys:
             raise exceptions.ValidationError('Missing required field email or username')
