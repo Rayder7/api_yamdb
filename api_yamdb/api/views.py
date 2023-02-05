@@ -1,13 +1,16 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, authentication, exceptions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
 
 from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
-                          TitleSerializer, UserSerializer)
+                          TitleSerializer, UserSerializer, SignupSerializer)
 from .permissions import IsAdminOnly#, OwnerOrModeratorOrAdminUserPermission
 
 
@@ -34,6 +37,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
+    pagination_class = LimitOffsetPagination
     # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
 
     def get_title(self):
@@ -49,6 +53,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    pagination_class = LimitOffsetPagination
     # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
 
     def get_review(self):
@@ -73,5 +78,23 @@ class Token():
     pass
 
 
-class Signup():
-    pass
+class Signup(APIView):
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        keys = serializer.data.keys()
+        if 'email' not in keys or 'username' not in keys:
+            raise exceptions.ValidationError('Missing required field email or username')
+        email = serializer.data['email']
+        username = serializer.data['username']
+        user = User.objects.filter(email=email, username=username)
+        confirmation_code = default_token_generator.make_token(user)
+        serializer.save()
+        send_mail(
+            'Your code to yamdb',
+            f'your confirmation code{confirmation_code}',
+            'test@mail.com',
+            [f'{email}']
+        )
+
+
+
