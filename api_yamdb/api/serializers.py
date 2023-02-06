@@ -50,16 +50,23 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
-
-    class Meta:
-        model = User
-        fields = ('email', 'username')
+    email = serializers.EmailField(required=True, max_length=254)
+    username = serializers.CharField(
+        required=True,
+        max_length=150,
+        validators=[validate_username]
+    )
 
 
 class TokenSerializer(serializers.Serializer):
-    pass
-  
-  
+    username = serializers.CharField(
+        required=True,
+        max_length=150,
+        validators=[validate_username]
+    )
+    confirmation_code = serializers.CharField(required=True, max_length=150)
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault,

@@ -65,6 +65,15 @@ http://127.0.0.1:8000/api/v1/genres/
 http://127.0.0.1:8000/api/v1/auth/token/
 ```
 
+## Эндпоинты и доступные типы запросов
+- Данные об api есть в формате yaml [тут](https://github.com/Rayder7/api_yamdb/blob/master/api_yamdb/static/redoc.yaml).
+- Вы можете его загрузить для чтения напрмер [сюда](https://editor.swagger.io/).
+
+
+## Авторы
+[Александр](https://github.com/Rayder7 "Github page")
+[Бальчугов Дмитрий](https://github.com/Lickan00 "Github page")
+[Фарид](https://github.com/freddy7753 "Github page")
 
 
 
