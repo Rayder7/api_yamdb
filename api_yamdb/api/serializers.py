@@ -87,7 +87,7 @@ class TokenSerializer(serializers.Serializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        default=serializers.CurrentUserDefault,
+        default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
         slug_field='username'
     )
@@ -98,7 +98,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        exclude = ('title',)
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('title', 'author')
 
     def validate(self, data):
@@ -107,14 +107,14 @@ class ReviewSerializer(serializers.ModelSerializer):
         title_id = self.context.get('view').kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
         if request.method == 'POST':
-            if title.reviwies.select_related('title').filter(author=author):
+            if title.reviews.select_related('title').filter(author=author):
                 raise ValidationError('only one review to title')
         return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        default=serializers.CurrentUserDefault,
+        default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
         slug_field='username'
     )
