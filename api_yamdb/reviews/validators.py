@@ -1,13 +1,14 @@
-from django.core import validators
-from django.utils.deconstruct import deconstructible
+import re
+
+from django.core.exceptions import ValidationError
 
 
-@deconstructible
-class validate_username(validators.RegexValidator):
-    regex = r"^[\w.@+-]+\Z"
-    message = (
-        "Введите корректное имя пользователя."
-        "Это значение может содержать только буквы, цифры, "
-        "и @/./+/-/_ символы."
-    )
-    flags = 0
+REGEX_FOR_USERNAME = re.compile(r'^[\w.@+-]+')
+
+
+def validate_username(name):
+    if name == 'me':
+        raise ValidationError('Имя пользователя "me" использовать запрещено!')
+    if not REGEX_FOR_USERNAME.fullmatch(name):
+        raise ValidationError(
+            'Можно использовать только буквы, цифры и символы @.+-_".')

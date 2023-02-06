@@ -1,35 +1,39 @@
-from django.contrib.auth.tokens import default_token_generator
+import uuid
+
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, authentication, exceptions
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.views import APIView
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
+                                        IsAuthenticated, AllowAny)
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from api_yamdb.settings import ADMIN_EMAIL
 from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
-                          TitleSerializer, UserSerializer, SignupSerializer)
-from .permissions import IsAdminOnly#, OwnerOrModeratorOrAdminUserPermission
+                          TitleSerializer, UserSerializer, SignupSerializer,
+                          TokenSerializer)
+from .permissions import IsAdminOnly, ReadOnly, IsAuthorOrModeratorOrReadOnly
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    pagination_class = LimitOffsetPagination
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    pagination_class = LimitOffsetPagination
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    pagination_class = LimitOffsetPagination
+    permission_classes = (IsAdminOnly | ReadOnly,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -37,8 +41,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    pagination_class = LimitOffsetPagination
-    # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+    permission_classes = (IsAuthorOrModeratorOrReadOnly,
+                          IsAuthenticatedOrReadOnly,)
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -53,8 +57,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    pagination_class = LimitOffsetPagination
-    # permission_classes = (OwnerOrModeratorOrAdminUserPermission,)
+    permission_classes = (IsAuthorOrModeratorOrReadOnly,
+                          IsAuthenticatedOrReadOnly,)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -71,31 +75,71 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (IsAdminOnly,)
     serializer_class = UserSerializer
-    pass
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
-
-class Token():
-    pass
-
-
-class Signup(APIView):
-    def post(self, request):
-        serializer = SignupSerializer(data=request.data)
+    @action(
+        detail=False,
+        methods=['GET', 'PATCH'],
+        url_path='me',
+        permission_classes=(IsAuthenticated,),
+        serializer_class=UserSerializer)
+    def me(self, request):
+        user = get_object_or_404(User, pk=request.user.id)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        keys = serializer.data.keys()
-        if 'email' not in keys or 'username' not in keys:
-            raise exceptions.ValidationError('Missing required field email or username')
-        email = serializer.data['email']
-        username = serializer.data['username']
-        user = User.objects.filter(email=email, username=username)
-        confirmation_code = default_token_generator.make_token(user)
-        serializer.save()
-        send_mail(
-            'Your code to yamdb',
-            f'your confirmation code{confirmation_code}',
-            'test@mail.com',
-            [f'{email}']
+        serializer.save(role=user.role)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def Token(request):
+    """Метод получения токена"""
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    confirm_code = serializer.validated_data['confirmation_code']
+    user = get_object_or_404(User, username=username)
+    if user.confirmation_code != confirm_code:
+        return Response(
+            'Код неверный', status=status.HTTP_400_BAD_REQUEST
         )
+    refresh = RefreshToken.for_user(user)
+    token_data = {'token': str(refresh.access_token)}
+
+    return Response(token_data, status=status.HTTP_200_OK)
 
 
-
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def Signup(request):
+    """Метод авторизации через отправку письма"""
+    serializer = SignupSerializer(data=request.data)
+    if User.objects.filter(
+        username=request.data.get('username'),
+        email=request.data.get('email')
+    ).exists():
+        return Response(request.data, status=status.HTTP_200_OK)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_DNS, username))
+    try:
+        user, created = User.objects.get_or_create(
+            **serializer.validated_data,
+            confirmation_code=confirmation_code
+        )
+    except Exception as error:
+        return Response(
+            f'Получена ошибка ->{error}<-',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    send_mail(
+        subject='Код подтверждения',
+        message=f'{user.confirmation_code} - Код авторизации на сайте',
+        from_email=ADMIN_EMAIL,
+        recipient_list=[user.email])
+    return Response(serializer.data, status=status.HTTP_200_OK)
