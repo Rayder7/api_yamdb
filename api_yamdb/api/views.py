@@ -1,10 +1,10 @@
 import uuid
 
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, filters, status
+from rest_framework import viewsets, filters, mixins, status
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         IsAuthenticated, AllowAny)
 from rest_framework.response import Response
@@ -15,28 +15,44 @@ from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
-                          TitleSerializer, UserSerializer, SignupSerializer,
+                          TitleSerializerRead, TitleSerializerCreate,
+                          UserSerializer, SignupSerializer,
                           TokenSerializer)
+from .filters import TitleFilter
 from .permissions import IsAdminOnly, ReadOnly, IsAuthorOrModeratorOrReadOnly
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CRDViewSet(mixins.ListModelMixin,
+                 mixins.CreateModelMixin,
+                 mixins.DestroyModelMixin,
+                 viewsets.GenericViewSet):
+    permission_classes = (IsAdminOnly | ReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class CategoryViewSet(CRDViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(CRDViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    serializer_class = TitleSerializerCreate
     permission_classes = (IsAdminOnly | ReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PATCH', 'DELETE',):
+            return TitleSerializerCreate
+        return TitleSerializerRead
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
