@@ -26,7 +26,9 @@ class TitleSerializerRead(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ('id', 'name', 'year', 'rating', 'description', 'category', 'genre')
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'category', 'genre'
+        )
         model = Title
 
     def get_rating(self, obj): # как посчитать средний рейтинг?
