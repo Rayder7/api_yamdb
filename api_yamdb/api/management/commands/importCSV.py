@@ -105,4 +105,3 @@ class Command(BaseCommand):
         self.title_genre_transfer()
         self.review_transfer()
         self.comment_transfer()
-
