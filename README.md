@@ -71,7 +71,7 @@ http://127.0.0.1:8000/api/v1/auth/token/
 
 
 ## Авторы
-[Александр](https://github.com/Rayder7 "Github page")
+[Мочалин Александр](https://github.com/Rayder7 "Github page")
 [Бальчугов Дмитрий](https://github.com/Lickan00 "Github page")
 [Фарид](https://github.com/freddy7753 "Github page")
 
