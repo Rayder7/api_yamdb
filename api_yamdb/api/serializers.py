@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
@@ -32,9 +33,8 @@ class TitleSerializerRead(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj): # как посчитать средний рейтинг?
-        review = Review.objects.filter(title_id=obj.id)
-        avg = sum(review.get('score')) / len(review)
-        return avg
+        avg = Review.objects.filter(title=obj.id).aggregate(Avg('score'))
+        return avg['score__avg']
 
 
 class TitleSerializerCreate(serializers.ModelSerializer):
