@@ -104,7 +104,9 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=UserSerializer)
     def me(self, request):
         user = get_object_or_404(User, pk=request.user.id)
-        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save(role=user.role)
 
