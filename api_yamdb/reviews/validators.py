@@ -18,6 +18,7 @@ def validate_username(name):
 
 
 def year_validator(value):
+    'Проверка значения года - не больше существующего'
     if value > datetime.datetime.now().year:
         raise ValidationError(
             f"год {value} не может быть больше текущего",
@@ -26,6 +27,7 @@ def year_validator(value):
 
 
 def max_length_validator(value):
+    'Проверка макс длины комментария'
     if len(value) > MAX_VALUE_COMMENT:
         raise ValidationError(
             f'Длина комментария {value}'

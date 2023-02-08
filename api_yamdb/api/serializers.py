@@ -8,20 +8,26 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from reviews.validators import validate_username
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
+VALUE_MIN_VAL = 1
+VALUE_MAX_VAL = 10
+
 
 class CategorySerializer(serializers.ModelSerializer):
+    'Серилизатор для модели Category'
     class Meta:
         fields = ('name', 'slug')
         model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    'Серилизатор для модели Genre'
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
 
 class TitleSerializerRead(serializers.ModelSerializer):
+    'Серилизатор для модели Title только чтение'
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.SerializerMethodField()
@@ -38,6 +44,7 @@ class TitleSerializerRead(serializers.ModelSerializer):
 
 
 class TitleSerializerCreate(serializers.ModelSerializer):
+    'Серилизатор для модели Title создание'
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -53,13 +60,14 @@ class TitleSerializerCreate(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    'Серилизатор для модели User'
     username = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[
+        validators=(
             validate_username,
-            UniqueValidator(queryset=User.objects.all())
-        ]
+            UniqueValidator(queryset=User.objects.all()),
+        )
     )
 
     class Meta:
@@ -76,6 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
+    'Серилизатор для авторизации с помощью e-mail'
     email = serializers.EmailField(required=True, max_length=254)
     username = serializers.CharField(
         required=True,
@@ -85,6 +94,7 @@ class SignupSerializer(serializers.Serializer):
 
 
 class TokenSerializer(serializers.Serializer):
+    'Серилизатор для токена'
     username = serializers.CharField(
         required=True,
         max_length=150,
@@ -94,6 +104,7 @@ class TokenSerializer(serializers.Serializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    'Серилизатор для модели Review'
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
@@ -101,7 +112,8 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
     score = serializers.IntegerField(
         required=True,
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
+        validators=(
+            MaxValueValidator(VALUE_MAX_VAL), MinValueValidator(VALUE_MIN_VAL))
     )
 
     class Meta:
@@ -121,6 +133,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    'Серилизатор для модели Comment'
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
