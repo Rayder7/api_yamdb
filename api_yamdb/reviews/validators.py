@@ -1,9 +1,12 @@
+import datetime as datetime
 import re
 
 from django.core.exceptions import ValidationError
 
 
 REGEX_FOR_USERNAME = re.compile(r'^[\w.@+-]+')
+
+MAX_VALUE_COMMENT = 5000
 
 
 def validate_username(name):
@@ -12,3 +15,20 @@ def validate_username(name):
     if not REGEX_FOR_USERNAME.fullmatch(name):
         raise ValidationError(
             'Можно использовать только буквы, цифры и символы @.+-_".')
+
+
+def year_validator(value):
+    if value > datetime.datetime.now().year:
+        raise ValidationError(
+            f"год {value} не может быть больше текущего",
+            params={"value": value},
+        )
+
+
+def max_length_validator(value):
+    if len(value) > MAX_VALUE_COMMENT:
+        raise ValidationError(
+            f'Длина комментария {value}'
+            f'не может быть больше {MAX_VALUE_COMMENT}',
+            params={"value": value},
+        )
