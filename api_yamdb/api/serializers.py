@@ -32,7 +32,7 @@ class TitleSerializerRead(serializers.ModelSerializer):
         )
         model = Title
 
-    def get_rating(self, obj): # как посчитать средний рейтинг?
+    def get_rating(self, obj):
         avg = Review.objects.filter(title=obj.id).aggregate(Avg('score'))
         return avg['score__avg']
 
