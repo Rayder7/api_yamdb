@@ -3,7 +3,7 @@ import uuid
 from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, filters, mixins, status
+from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         IsAuthenticated, AllowAny)
@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from api_yamdb.settings import ADMIN_EMAIL
 from reviews.models import (Category, Genre, Review,
                             Title, User)
+from .mixins import CRDViewSet
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
                           TitleSerializerRead, TitleSerializerCreate,
@@ -22,27 +23,20 @@ from .filters import TitleFilter
 from .permissions import IsAdminOnly, ReadOnly, IsAuthorOrModeratorOrReadOnly
 
 
-class CRDViewSet(mixins.ListModelMixin,
-                 mixins.CreateModelMixin,
-                 mixins.DestroyModelMixin,
-                 viewsets.GenericViewSet):
-    permission_classes = (IsAdminOnly | ReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
-
-
 class CategoryViewSet(CRDViewSet):
+    'Вьюсет для CategorySerializer'
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class GenreViewSet(CRDViewSet):
+    'Вьюсет для GenreSerializer'
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    'Вьюсет для TitleSerializer'
     queryset = Title.objects.all()
     serializer_class = TitleSerializerCreate
     permission_classes = (IsAdminOnly | ReadOnly,)
@@ -56,6 +50,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    'Вьюсет для ReviewSerializer'
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorOrModeratorOrReadOnly,
                           IsAuthenticatedOrReadOnly,)
@@ -72,6 +67,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    'Вьюсет для CommentSerializer'
     serializer_class = CommentSerializer
     permission_classes = (IsAuthorOrModeratorOrReadOnly,
                           IsAuthenticatedOrReadOnly,)
@@ -88,6 +84,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    'Вьюсет для UserSerializer'
     queryset = User.objects.all()
     permission_classes = (IsAdminOnly,)
     serializer_class = UserSerializer
