@@ -76,7 +76,7 @@ class GenreToTitle(models.Model):
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
-        return self.title + self.genre
+        return f'{self.title} + {self.genre}'
 
 
 class User(AbstractUser):
