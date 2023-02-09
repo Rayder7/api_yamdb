@@ -2,26 +2,33 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 from reviews.validators import validate_username
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
+VALUE_MIN_VAL = 1
+VALUE_MAX_VAL = 10
+
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Серилизатор для модели Category."""
     class Meta:
         fields = ('name', 'slug')
         model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Серилизатор для модели Genre."""
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
 
 class TitleSerializerRead(serializers.ModelSerializer):
+    """Серилизатор для модели Title только чтение."""
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.SerializerMethodField()
@@ -38,6 +45,7 @@ class TitleSerializerRead(serializers.ModelSerializer):
 
 
 class TitleSerializerCreate(serializers.ModelSerializer):
+    """Серилизатор для модели Title создание."""
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -53,13 +61,14 @@ class TitleSerializerCreate(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Серилизатор для модели User."""
     username = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[
+        validators=(
             validate_username,
-            UniqueValidator(queryset=User.objects.all())
-        ]
+            UniqueValidator(queryset=User.objects.all()),
+        )
     )
 
     class Meta:
@@ -70,30 +79,33 @@ class UserSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=User.objects.all(),
-                fields=['username', 'email']
+                fields=('username', 'email')
             ),
         ]
 
 
 class SignupSerializer(serializers.Serializer):
+    """Серилизатор для авторизации с помощью e-mail."""
     email = serializers.EmailField(required=True, max_length=254)
     username = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[validate_username]
+        validators=(validate_username,)
     )
 
 
 class TokenSerializer(serializers.Serializer):
+    """Серилизатор для токена."""
     username = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[validate_username]
+        validators=(validate_username,)
     )
     confirmation_code = serializers.CharField(required=True, max_length=150)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Серилизатор для модели Review."""
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
@@ -101,7 +113,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
     score = serializers.IntegerField(
         required=True,
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
+        validators=(
+            MaxValueValidator(VALUE_MAX_VAL),
+            MinValueValidator(VALUE_MIN_VAL))
     )
 
     class Meta:
@@ -115,12 +129,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         title_id = self.context.get('view').kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
         if request.method == 'POST':
-            if title.reviews.select_related('title').filter(author=author):
+            if title.reviews.filter(title=title_id, author=author).exists():
                 raise ValidationError('only one review to title')
         return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Серилизатор для модели Comment."""
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         queryset=User.objects.all(),
